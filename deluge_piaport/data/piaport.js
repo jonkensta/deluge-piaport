@@ -134,11 +134,13 @@ Deluge.ux.preferences.PiaPortPage = Ext.extend(Ext.Panel, {
                 this.setRandomPortFalse.setValue(config.set_random_port_false);
 
                 // Never populate the key field from the server; only reflect
-                // whether one is stored, and offer "Clear" only when it is.
-                this.apiKey.setValue('');
+                // whether one is stored, and offer "Clear" only when it is. Set
+                // emptyText before clearing the value so setValue can't re-apply a
+                // stale placeholder.
                 this.apiKey.emptyText = config.api_key_set
                     ? _('(key stored - leave blank to keep)')
                     : _('(no key set)');
+                this.apiKey.setValue('');
                 if (this.apiKey.rendered) {
                     this.apiKey.applyEmptyText();
                 }
