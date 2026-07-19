@@ -6,8 +6,9 @@ forwards from [PIA](https://www.privateinternetaccess.com/) (Private Internet Ac
 with configuration and live status exposed through the Deluge **web interface**.
 
 > **Status: in development.** The core port-sync logic (gluetun polling, listen-port
-> updates, reannounce) and its unit tests are implemented; what remains is the web
-> Preferences form/status panel (the settings UI) and the egg build/deploy pass. See
+> updates, reannounce), its unit tests, and the web Preferences UI (settings form +
+> live status panel) are implemented. What remains is the egg build/deploy pass against
+> the LinuxServer.io Deluge container. See
 > [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) for the full design and milestones.
 
 ## Why
