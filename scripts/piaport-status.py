@@ -14,8 +14,12 @@ Run inside the Deluge container (reads localclient creds from /config/auth):
 `make status` copies this in and runs it for you.
 """
 
+import sys
+
 from deluge.ui.client import client
 from twisted.internet import defer, reactor
+
+_result = {'code': 1}  # default to failure until we actually get status
 
 
 def _localclient_password(path='/config/auth'):
@@ -39,9 +43,12 @@ def main():
         status = yield client.piaport.get_status()
         print('config:', config)
         print('status:', status)
+        _result['code'] = 0
     except Exception as exc:
         print('ERROR:', repr(exc))
     finally:
+        if _timeout.active():
+            _timeout.cancel()
         try:
             client.disconnect()
         except Exception:
@@ -50,6 +57,13 @@ def main():
             reactor.stop()
 
 
+def _on_timeout():
+    print('ERROR: timed out talking to the Deluge daemon')
+    if reactor.running:
+        reactor.stop()
+
+
+_timeout = reactor.callLater(30, _on_timeout)
 reactor.callLater(0, main)
-reactor.callLater(30, reactor.stop)
 reactor.run()
+sys.exit(_result['code'])

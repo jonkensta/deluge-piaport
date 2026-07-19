@@ -60,7 +60,7 @@ own image. The `Makefile` auto-detects that image, so you don't have to hardcode
 
 ```bash
 make install    # builds the egg in the container's image, copies it in, restarts Deluge
-make enable     # enables the plugin in the running daemon
+make enable     # waits for the daemon, then enables the plugin
 ```
 
 Then set the gluetun API key (see below). To check it's running:
@@ -69,7 +69,13 @@ Then set the gluetun API key (see below). To check it's running:
 make status     # prints the plugin's live config + status over RPC
 ```
 
-Override the container name if it isn't `deluge`: `make install DELUGE_CONTAINER=mydeluge`.
+If your container isn't named `deluge`, export the name once so it applies to every
+command (a `make install DELUGE_CONTAINER=…` override would not carry over to `make enable`):
+
+```bash
+export DELUGE_CONTAINER=mydeluge
+make install && make enable
+```
 
 ## Configuration
 

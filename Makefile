@@ -19,7 +19,7 @@ help:
 	@echo "  egg      - build the plugin egg in the Deluge container's image"
 	@echo "  install  - build, copy the egg into the container, restart it"
 	@echo "  enable   - enable the plugin in the running daemon"
-	@echo "  status   - print the plugin's live status via deluge-console"
+	@echo "  status   - print the plugin's live status over the daemon RPC"
 	@echo "  clean    - remove build artifacts"
 
 test:
@@ -37,10 +37,23 @@ install: egg
 	docker restart $(DELUGE_CONTAINER)
 	@echo "Installed. Wait a few seconds, then: make enable"
 
+# Waits for the daemon RPC to come up (install restarts the container) and
+# confirms the plugin actually shows as enabled before reporting success.
 enable:
-	@PW=$$(docker exec $(DELUGE_CONTAINER) sh -c "awk -F: '/^localclient:/{print \$$2}' /config/auth"); \
-	docker exec $(DELUGE_CONTAINER) deluge-console -U localclient -P "$$PW" "plugin -e $(PLUGIN)"
-	@echo "Enabled. Configure it in the web UI: Preferences > PiaPort"
+	@echo "Enabling $(PLUGIN) (waiting for the Deluge daemon)..."; \
+	for i in $$(seq 1 30); do \
+	  PW=$$(docker exec $(DELUGE_CONTAINER) sh -c "awk -F: '/^localclient:/{print \$$2}' /config/auth" 2>/dev/null); \
+	  if [ -n "$$PW" ]; then \
+	    docker exec $(DELUGE_CONTAINER) deluge-console -U localclient -P "$$PW" "plugin -e $(PLUGIN)" >/dev/null 2>&1; \
+	    if docker exec $(DELUGE_CONTAINER) deluge-console -U localclient -P "$$PW" "plugin -s" 2>/dev/null | grep -q "$(PLUGIN)"; then \
+	      echo "Enabled $(PLUGIN). Configure it in the web UI: Preferences > $(PLUGIN)"; \
+	      exit 0; \
+	    fi; \
+	  fi; \
+	  sleep 1; \
+	done; \
+	echo "Timed out waiting for the Deluge daemon to enable $(PLUGIN)" >&2; \
+	exit 1
 
 status:
 	docker cp scripts/piaport-status.py $(DELUGE_CONTAINER):/tmp/piaport-status.py
