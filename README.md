@@ -5,11 +5,11 @@ A [Deluge](https://deluge-torrent.org/) 2.x plugin that keeps Deluge's incoming
 forwards from [PIA](https://www.privateinternetaccess.com/) (Private Internet Access),
 with configuration and live status exposed through the Deluge **web interface**.
 
-> **Status: in development.** The core port-sync logic (gluetun polling, listen-port
-> updates, reannounce), its unit tests, and the web Preferences UI (settings form +
-> live status panel) are implemented. What remains is the egg build/deploy pass against
-> the LinuxServer.io Deluge container. See
-> [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) for the full design and milestones.
+> **Status: working.** Core port-sync, the web Preferences UI, and unit tests are done,
+> and the plugin has been built, installed, and validated end-to-end against a live
+> LinuxServer.io Deluge + gluetun/PIA setup (it corrected Deluge's listen port to the
+> forwarded port on demand). See [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) for
+> the full design.
 
 ## Why
 
@@ -32,23 +32,65 @@ Header: X-API-Key: <your gluetun api key>
 …then sets Deluge's `listen_ports` to `[port, port]` and reannounces — all from inside
 the daemon, on a timer, no `docker exec` or cron required.
 
-## Planned features
+## Features
 
 - Polls gluetun's control server on a configurable interval (non-blocking, in the Twisted
   reactor).
 - Updates Deluge's listen port only when the forwarded port actually changes; forces a
   tracker reannounce.
 - Handles PIA reconnects gracefully (transient `port == 0` = "not ready", errors don't
-  kill the poll loop).
+  kill the poll loop; in-flight results are discarded across config changes).
 - **Web UI**: a Preferences page (modeled on Deluge's built-in Label plugin) to configure
   the gluetun URL / API key / poll interval and view live status (forwarded port, current
   listen port, last checked, errors), plus a "Check now" button.
 
-## Design & build details
+## Requirements
 
-Everything — architecture, the reviewed Deluge 2.x API surface, the egg build/deploy
-recipe for the LinuxServer.io Deluge container, security handling of the API key, and the
-test plan — lives in [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md).
+- Deluge 2.x. Tested against `lscr.io/linuxserver/deluge` (Python 3.12).
+- gluetun with port forwarding on and its **HTTP control server** enabled with an API key
+  (`VPN_PORT_FORWARDING=on`, `HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE={"auth":"apikey","apikey":"…"}`).
+- Deluge sharing gluetun's network namespace (`network_mode: "service:gluetun"`), so it can
+  reach the control server at `http://localhost:8000`.
+
+## Installation
+
+Deluge loads third-party plugins as **eggs**, and only loads an egg whose Python version
+tag matches the daemon's interpreter — so the egg is built inside the Deluge container's
+own image. The `Makefile` auto-detects that image, so you don't have to hardcode a version:
+
+```bash
+make install    # builds the egg in the container's image, copies it in, restarts Deluge
+make enable     # enables the plugin in the running daemon
+```
+
+Then set the gluetun API key (see below). To check it's running:
+
+```bash
+make status     # prints the plugin's live config + status over RPC
+```
+
+Override the container name if it isn't `deluge`: `make install DELUGE_CONTAINER=mydeluge`.
+
+## Configuration
+
+In the Deluge **web UI**, open **Preferences → PiaPort** and set:
+
+- **Gluetun control URL** — default `http://localhost:8000`.
+- **Gluetun API key** — the `apikey` from gluetun's `HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE`.
+  Stored server-side and never sent back to the browser; leave blank to keep the existing
+  key, or tick **Clear stored key** to remove it.
+- **Poll interval** (seconds, min 30), and the reannounce / disable-random-port toggles.
+
+Use **Check now** to poll immediately and see the result in the status panel.
+
+## Development
+
+```bash
+make test    # runs the pure-logic unit tests (no Deluge/Twisted needed)
+```
+
+Architecture, the reviewed Deluge 2.x API surface, security handling of the API key, and
+the full test plan live in [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md).
 
 ## Credits
 
@@ -57,5 +99,4 @@ test plan — lives in [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md).
 
 ## License
 
-Intended to be GPL-3.0-or-later, matching Deluge and its plugins (to be finalized when the
-code lands).
+GPL-3.0-or-later, matching Deluge and its plugins. See [`LICENSE`](./LICENSE).
