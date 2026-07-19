@@ -96,3 +96,30 @@ def test_missing_port_key_becomes_gluetun_error():
 def test_out_of_range_port_becomes_gluetun_error():
     with pytest.raises(GluetunError):
         fetch_forwarded_port('http://localhost:8000', opener=_opener(b'{"port": 70000}'))
+
+
+def test_boolean_port_rejected():
+    # bool is an int subclass; {"port": true} must not become port 1.
+    with pytest.raises(GluetunError):
+        fetch_forwarded_port('http://localhost:8000', opener=_opener(b'{"port": true}'))
+
+
+def test_fractional_port_rejected():
+    # Must not silently truncate 54321.9 -> 54321.
+    with pytest.raises(GluetunError):
+        fetch_forwarded_port('http://localhost:8000', opener=_opener(b'{"port": 54321.9}'))
+
+
+def test_string_port_rejected():
+    with pytest.raises(GluetunError):
+        fetch_forwarded_port('http://localhost:8000', opener=_opener(b'{"port": "54321"}'))
+
+
+def test_non_object_json_rejected():
+    with pytest.raises(GluetunError):
+        fetch_forwarded_port('http://localhost:8000', opener=_opener(b'[1, 2, 3]'))
+
+
+def test_invalid_utf8_becomes_gluetun_error():
+    with pytest.raises(GluetunError):
+        fetch_forwarded_port('http://localhost:8000', opener=_opener(b'\xff\xfe\xff'))

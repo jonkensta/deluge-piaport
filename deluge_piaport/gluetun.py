@@ -54,11 +54,19 @@ def fetch_forwarded_port(
     except Exception as exc:  # URLError, HTTPError, socket.timeout, ...
         raise GluetunError('request to %s failed: %s' % (url, exc)) from exc
 
+    # json.loads on bytes raises JSONDecodeError (a ValueError) on bad JSON and
+    # UnicodeDecodeError (also a ValueError) on bad encoding; catch both.
     try:
-        port = int(json.loads(raw)['port'])
-    except (ValueError, TypeError, KeyError) as exc:
-        raise GluetunError('unexpected response from %s: %s' % (url, exc)) from exc
+        data = json.loads(raw)
+    except ValueError as exc:
+        raise GluetunError('invalid response from %s: %s' % (url, exc)) from exc
 
+    port = data.get('port') if isinstance(data, dict) else None
+    # Require a real JSON integer: bool is an int subclass ({"port": true} -> 1)
+    # and a float would silently truncate ({"port": 54321.9} -> 54321), either of
+    # which could point Deluge at a wrong/unforwarded port.
+    if isinstance(port, bool) or not isinstance(port, int):
+        raise GluetunError('unexpected "port" in response from %s: %r' % (url, port))
     if not 0 <= port <= 65535:
         raise GluetunError('port out of range: %d' % port)
 
