@@ -45,7 +45,8 @@ enable:
 	  PW=$$(docker exec $(DELUGE_CONTAINER) sh -c "awk -F: '/^localclient:/{print \$$2}' /config/auth" 2>/dev/null); \
 	  if [ -n "$$PW" ]; then \
 	    docker exec $(DELUGE_CONTAINER) deluge-console -U localclient -P "$$PW" "plugin -e $(PLUGIN)" >/dev/null 2>&1; \
-	    if docker exec $(DELUGE_CONTAINER) deluge-console -U localclient -P "$$PW" "plugin -s" 2>/dev/null | grep -q "$(PLUGIN)"; then \
+	    if docker exec $(DELUGE_CONTAINER) deluge-console -U localclient -P "$$PW" "plugin -s" 2>/dev/null \
+	        | awk '/^Enabled Plugins:/{e=1;next} /^[^[:space:]]/{e=0} e && $$1=="$(PLUGIN)"{f=1} END{exit f?0:1}'; then \
 	      echo "Enabled $(PLUGIN). Configure it in the web UI: Preferences > $(PLUGIN)"; \
 	      exit 0; \
 	    fi; \
