@@ -50,6 +50,9 @@ class Core(CorePluginBase):
         self.core = component.get('Core')
         self._loop = None
         self._inflight = None
+        # Bumped whenever the loop is stopped/restarted so a fetch already running
+        # in a worker thread can't apply results after disable() or a config change.
+        self._generation = 0
         self._status = {
             'forwarded_port': None,
             'listen_port': None,
@@ -74,6 +77,9 @@ class Core(CorePluginBase):
             self._loop.stop()
         self._loop = None
         self._status['running'] = False
+        # Invalidate any fetch already dispatched to a worker thread: its result
+        # belongs to a now-defunct config and must not be applied.
+        self._generation += 1
 
     def _restart_loop(self):
         """Apply current config: stop any loop, restart only if enabled."""
@@ -104,6 +110,7 @@ class Core(CorePluginBase):
         """
         if self._inflight is not None:
             return self._inflight
+        generation = self._generation
         deferred = deferToThread(
             fetch_forwarded_port,
             self.config['gluetun_url'],
@@ -111,7 +118,12 @@ class Core(CorePluginBase):
             self.config['api_key'],
         )
         self._inflight = deferred
-        deferred.addCallbacks(self._on_fetch_ok, self._on_fetch_error)
+        deferred.addCallbacks(
+            self._on_fetch_ok,
+            self._on_fetch_error,
+            callbackArgs=(generation,),
+            errbackArgs=(generation,),
+        )
         deferred.addBoth(self._clear_inflight)
         return deferred
 
@@ -119,14 +131,22 @@ class Core(CorePluginBase):
         self._inflight = None
         return result
 
-    def _on_fetch_error(self, failure):
+    def _is_stale(self, generation):
+        return generation != self._generation
+
+    def _on_fetch_error(self, failure, generation):
+        if self._is_stale(generation):
+            return None  # config changed/disabled since dispatch; ignore.
         self._status['last_checked'] = _now()
         self._status['port_forwarding'] = 'error'
         self._status['last_error'] = failure.getErrorMessage()
         log.warning('PiaPort: gluetun poll failed: %s', failure.getErrorMessage())
         return None  # swallow: keep the loop alive
 
-    def _on_fetch_ok(self, port):
+    def _on_fetch_ok(self, port, generation):
+        if self._is_stale(generation):
+            log.debug('PiaPort: dropping stale poll result (config changed)')
+            return None
         self._status['last_checked'] = _now()
         self._status['last_error'] = None
         if port == 0:
