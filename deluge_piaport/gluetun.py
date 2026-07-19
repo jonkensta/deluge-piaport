@@ -10,8 +10,7 @@
 
 A single blocking helper that fetches the currently forwarded port from gluetun's
 control server. It is stdlib-only (no Deluge/Twisted) so it is unit-testable and
-so core.py can run it off the reactor via deferToThread (IMPLEMENTATION_PLAN.md
-section 2).
+so core.py can run it off the reactor via deferToThread.
 
 Deluge reaches gluetun over the shared network namespace, e.g.:
     GET http://localhost:8000/v1/portforward

@@ -10,10 +10,10 @@ sync with the port [gluetun](https://github.com/qdm12/gluetun) forwards from PIA
 configuration and live status in the Deluge **web interface**. It is a working
 replacement for [`jawilson/deluge-piaportplugin`](https://github.com/jawilson/deluge-piaportplugin).
 
-**Status: planning.** No plugin code exists yet. The complete, reviewed design lives in
-[`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) — treat it as the source of truth for
-architecture, the Deluge 2.x API surface, the egg build/deploy recipe, and the test plan.
-Keep it in sync when the design changes.
+**Status: working.** The plugin is implemented, unit-tested, and validated end-to-end
+against a live LinuxServer.io Deluge + gluetun/PIA setup. The design is embodied in the
+code and the README; the original design doc lives in the git history if you need the
+rationale behind a decision.
 
 ## Key facts (don't rediscover these)
 

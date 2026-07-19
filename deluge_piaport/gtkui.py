@@ -12,7 +12,7 @@
 
 The target host is headless and web-first, so the GTK client gets no dedicated
 UI. This stub exists only so the gtk3ui entry point loads cleanly when the plugin
-is used from the GTK client (see IMPLEMENTATION_PLAN.md section 10).
+is used from the GTK client.
 """
 
 import logging

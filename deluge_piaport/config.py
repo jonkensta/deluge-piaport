@@ -25,7 +25,7 @@ DEFAULT_PREFS = {
 MIN_POLL_INTERVAL = 30
 
 # Keys set_config may write directly. 'api_key' is excluded: it is handled via the
-# keep/replace/clear protocol below (IMPLEMENTATION_PLAN.md section 7).
+# keep/replace/clear protocol below.
 CONFIG_KEYS = frozenset(k for k in DEFAULT_PREFS if k != 'api_key')
 
 
@@ -49,7 +49,7 @@ def validate_and_clean(options):
     - api_key_action: one of ('keep',), ('set', key), ('clear',).
 
     'clear_api_key': True takes precedence over any supplied 'api_key' value, so a
-    ticked "Clear stored key" checkbox always wins (IMPLEMENTATION_PLAN.md section 7).
+    ticked "Clear stored key" checkbox always wins.
     Raises ConfigError on unknown keys.
     """
     options = dict(options)

@@ -11,9 +11,8 @@
 """PiaPort core plugin.
 
 Keeps Deluge's listen port in sync with the port gluetun forwards from PIA by
-polling gluetun's HTTP control server on a timer. See IMPLEMENTATION_PLAN.md
-sections 2-4 for the design; the pure fetch/config logic lives in gluetun.py and
-config.py so it can be tested without a running daemon.
+polling gluetun's HTTP control server on a timer. The pure fetch/config logic
+lives in gluetun.py and config.py so it can be tested without a running daemon.
 """
 
 import logging
@@ -209,7 +208,7 @@ class Core(CorePluginBase):
     def set_config(self, options):
         """Validate + persist config and restart the loop.
 
-        api-key protocol (IMPLEMENTATION_PLAN.md section 7): 'api_key' absent = keep,
+        api-key protocol: 'api_key' absent = keep,
         non-empty = replace, 'clear_api_key': True = clear.
         """
         settings, key_action = validate_and_clean(options)

@@ -8,8 +8,7 @@ with configuration and live status exposed through the Deluge **web interface**.
 > **Status: working.** Core port-sync, the web Preferences UI, and unit tests are done,
 > and the plugin has been built, installed, and validated end-to-end against a live
 > LinuxServer.io Deluge + gluetun/PIA setup (it corrected Deluge's listen port to the
-> forwarded port on demand). See [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) for
-> the full design.
+> forwarded port on demand).
 
 ## Why
 
@@ -95,8 +94,8 @@ Use **Check now** to poll immediately and see the result in the status panel.
 make test    # runs the pure-logic unit tests (no Deluge/Twisted needed)
 ```
 
-Architecture, the reviewed Deluge 2.x API surface, security handling of the API key, and
-the full test plan live in [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md).
+The architecture, the Deluge 2.x API surface used, and the API-key handling are documented
+inline in the source; the design rationale is preserved in the git history.
 
 ## Credits
 

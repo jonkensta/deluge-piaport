@@ -12,7 +12,7 @@ The unit tests only exercise the pure modules (config.py, gluetun.py), but
 importing them pulls in the package __init__, which imports Deluge. Deluge (and
 Twisted) are not installed in a bare test/CI environment, so we stub the single
 symbol __init__ needs. Tests never touch Deluge itself; the daemon-coupled code
-in core.py is covered by the manual integration steps in IMPLEMENTATION_PLAN.md.
+in core.py is covered by manual integration testing.
 """
 
 import os

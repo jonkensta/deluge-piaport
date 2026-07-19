@@ -18,7 +18,7 @@ Ext.ns('Deluge.ux.preferences');
  *
  * Preferences page: editable settings + a live status panel. onApply() is called
  * by Deluge's Preferences window on Apply/OK and pushes the settings to the core
- * plugin via deluge.client.piaport.set_config (IMPLEMENTATION_PLAN.md sections 5, 7).
+ * plugin via deluge.client.piaport.set_config.
  */
 Deluge.ux.preferences.PiaPortPage = Ext.extend(Ext.Panel, {
     title: _('PiaPort'),
@@ -201,7 +201,7 @@ Deluge.ux.preferences.PiaPortPage = Ext.extend(Ext.Panel, {
             force_reannounce: this.forceReannounce.getValue(),
             set_random_port_false: this.setRandomPortFalse.getValue(),
         };
-        // api-key protocol (IMPLEMENTATION_PLAN.md section 7): clear wins; otherwise
+        // api-key protocol: clear wins; otherwise
         // a non-empty value replaces, and blank means keep (omit the field).
         if (this.clearApiKey.getValue()) {
             config.clear_api_key = true;
