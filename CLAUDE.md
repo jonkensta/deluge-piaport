@@ -42,3 +42,17 @@ Keep it in sync when the design changes.
 - **Concise, tagged commit messages.** Start the subject with a tag: `feat: …`,
   `bugfix: …` (also fine: `docs: …`, `refactor: …`, `test: …`, `chore: …`). A short body
   is welcome when it adds context — keep it to a single paragraph where possible.
+
+## Code review with codex
+
+- **When `codex` is available, use it for iterative, adversarial review of branches at
+  logical stopping points** — e.g. after a milestone or a coherent chunk of work lands on
+  a branch, not after every commit. Feed it the branch's diff/context and have it try to
+  break the change; address findings and re-review until it signs off. Check availability
+  with `command -v codex`; if it's absent, skip this step (don't block on it).
+- **Reuse the same codex session across reviews of the *same* branch** to preserve context
+  and avoid burning tokens re-establishing it. `codex exec` prints a session id; continue
+  it with `codex exec resume <session-id>` (or `codex exec resume --last`).
+- **Start a fresh codex session when the need genuinely calls for it** — e.g. a new branch,
+  a different concern, or when the prior session's context has drifted or gone stale. Don't
+  contort a stale session just to reuse it.
