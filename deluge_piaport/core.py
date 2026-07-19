@@ -52,7 +52,9 @@ class Core(CorePluginBase):
         self._inflight = None
         # Bumped whenever the loop is stopped/restarted so a fetch already running
         # in a worker thread can't apply results after disable() or a config change.
-        self._generation = 0
+        # Preserved across a disable/enable of the same instance so it stays
+        # monotonic (a reset to 0 could make a lingering old fetch look current).
+        self._generation = getattr(self, '_generation', 0)
         self._status = {
             'forwarded_port': None,
             'listen_port': None,
@@ -78,8 +80,11 @@ class Core(CorePluginBase):
         self._loop = None
         self._status['running'] = False
         # Invalidate any fetch already dispatched to a worker thread: its result
-        # belongs to a now-defunct config and must not be applied.
+        # belongs to a now-defunct config and must not be applied. Dropping the
+        # reference also lets the next _poll() start a fresh fetch immediately
+        # (via now=True) instead of joining the stale one.
         self._generation += 1
+        self._inflight = None
 
     def _restart_loop(self):
         """Apply current config: stop any loop, restart only if enabled."""
@@ -124,11 +129,14 @@ class Core(CorePluginBase):
             callbackArgs=(generation,),
             errbackArgs=(generation,),
         )
-        deferred.addBoth(self._clear_inflight)
+        deferred.addBoth(self._clear_inflight, generation)
         return deferred
 
-    def _clear_inflight(self, result):
-        self._inflight = None
+    def _clear_inflight(self, result, generation):
+        # Only clear if a newer fetch (from a restart) hasn't already replaced this
+        # one, so an old completion can't wipe the current in-flight reference.
+        if generation == self._generation:
+            self._inflight = None
         return result
 
     def _is_stale(self, generation):
